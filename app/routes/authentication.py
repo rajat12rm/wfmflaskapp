@@ -50,7 +50,7 @@ def authentication():
                     f'{usernameObject.name}' : {
                         "time":loginTime,
                         "object":usernameObject,
-                        "awsSessionId" : usernameObject.name,
+                        "awsSessionId" : usernameObject.name+str(datetime.now()).replace(" ",'-').replace(":",'-').replace(".","-"),
                         "wfmAccessToken" : wfm_access_token,
                         "wfmIdToken" : wfm_id_token
                         }
@@ -59,7 +59,7 @@ def authentication():
                     current_app.config['loginUserArray'][usernameObject.name] = {
                         "time":loginTime,
                         "object":usernameObject,
-                        "awsSessionId" : usernameObject.name,
+                        "awsSessionId" : usernameObject.name+str(datetime.now()).replace(" ",'-').replace(":",'-').replace(".","-"),
                         "wfmAccessToken" : wfm_access_token,
                         "wfmIdToken" : wfm_id_token
                     }

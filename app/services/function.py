@@ -3,6 +3,7 @@ import urllib.parse
 from datetime import datetime,timedelta
 from ..services.wfmPunchCreateRequest import punch_create_payload
 from ..services.wfmScheduleRetrieveRequest import schedule_retrieve_payload
+from ..services.wfmTimeOffCreateRequest import createTimeOffRequestPayload
 
 def convoHistory(conn,headers,userMessage,userObject,aws_client,awsSessionId):
     output = lex_convo(aws_client,userObject.botId,userObject.botAliasId,userObject.localeId,awsSessionId, userMessage)
@@ -104,6 +105,7 @@ def convoHistory(conn,headers,userMessage,userObject,aws_client,awsSessionId):
                                                       str(datetime.now()).split(" ")[0]
                                                       )
         if payCodeAccrualbalances:
+          print(payCodeAccrualbalances)
           if len(payCodeAccrualbalances)>0:
             response = {
               "category" : "table",
@@ -127,12 +129,45 @@ def convoHistory(conn,headers,userMessage,userObject,aws_client,awsSessionId):
            "message" : message 
            }
           return response
-
+        
+    elif (str(output["sessionState"]["intent"]["name"]) == "applyTimeOff" and str(output["sessionState"]["intent"]["state"])) == "Fulfilled":
+      print(output)
+      message = ''
+      for i in range (len(output['messages'])):
+        message += " "+output['messages'][i]['content']
+      print(message)
+      print("API Request Applying in WFM")
+      applyTimeOffSuccess= applyTimeOff(
+                                conn,
+                                headers,
+                                userObject.wfmCreateTimeOffApiUrlEndPoint,
+                                output["sessionState"]["intent"]["slots"]["requestSubtype"]["value"]["originalValue"],
+                                output["sessionState"]["intent"]["slots"]["payCode"]["value"]["originalValue"],
+                                output["sessionState"]["intent"]["slots"]["sdate"]["value"]["interpretedValue"],
+                                output["sessionState"]["intent"]["slots"]["edate"]["value"]["interpretedValue"]
+                                )
+      
+      if applyTimeOffSuccess:
+        message = "Time Off Applied Successfully! Take Care"
+        response = {
+          "category" : "Text",
+          "message" : message 
+        }
+        return response
+      else:
+        message = "There Was An Issue In Applying Time Off"
+        response = {
+          "category" : "Text",
+          "message" : message 
+        }
+        return response
+         
     else:
+        #Let the normal conversion flow from Lex Happen
         message = ''
         for i in range (len(output['messages'])):
             message += " "+output['messages'][i]['content']
-
+        print(message)
         response = {
            "category" : "Text",
            "message" : message 
@@ -189,7 +224,7 @@ def compare_timestamps(login_time_str, current_time_str):
     time_difference = current_time - login_time
     
     # Define the maximum allowed difference as 2 minutes and 50 seconds
-    max_difference = timedelta(minutes=2, seconds=50)
+    max_difference = timedelta(minutes=29, seconds=50)
     
     # Compare the time difference with the maximum allowed difference
     if time_difference > max_difference:
@@ -325,18 +360,39 @@ def getPayCodeAndAccrualBalanceFromRequestSubtype(conn,headers,url,subtype,curre
     if len(data)>0:
       payCodeAccrualArray = []
       # set table headers
-      payCodeAccrualArray.append("Pay Code","Balance","Accrual")
+      payCodeAccrualArray.append(["Pay Code","Balance","Accrual"])
       payCodeAccrualTable.append(payCodeAccrualArray)
       for i in range(0,len(data)):
         payCodeAccrualArray = []
         if len(data[i]['balances'])>0:
-          payCodeAccrualTable.append(data[i]['payCode']['qualifier'],data[i]['balances'][0]['dayBalances'][0]['availableBalanceInSeconds'],data[i]['balances'][0]['accrualCode']['qualifier'])
-
-      
+          payCodeAccrualTable.append([data[i]['payCode']['qualifier'],data[i]['balances'][0]['dayBalances'][0]['availableBalanceInSeconds'],data[i]['balances'][0]['accrualCode']['qualifier']])
       return payCodeAccrualTable
        
        
-       
+def applyTimeOff(conn,headers,url,requestSubType,payCode,startDate,endDate):
+  conn.request("POST",
+              url,
+              createTimeOffRequestPayload(
+                requestSubType,
+                startDate,
+                endDate,
+                payCode
+                ),
+              headers
+              )
+  
+  res = conn.getresponse()
+  print(res.status)
+  if int(res.status)==400:
+    return False
+  else:
+    data = res.read()
+    data = data.decode("utf-8")
+    print(data)
+    return True
 
+   
+   
+   
    
    
