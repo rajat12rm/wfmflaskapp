@@ -331,9 +331,10 @@ def getRequestSubtype(conn,headers,url):
     #print(data)
     subTypeArray = []
     if len(data)>0:
+        subTypeArray.append(['Request Sub-Types'])
         for i in range(0,len(data)):
             print(data[i]['name'],"\n")
-            subTypeArray.append(data[i]['name'])
+            subTypeArray.append([data[i]['name']])
         print(i+1," Request Subtypes Found")
         return subTypeArray
     else:
@@ -358,14 +359,11 @@ def getPayCodeAndAccrualBalanceFromRequestSubtype(conn,headers,url,subtype,curre
     data = json.loads(data)
     payCodeAccrualTable = []
     if len(data)>0:
-      payCodeAccrualArray = []
       # set table headers
-      payCodeAccrualArray.append(["Pay Code","Balance","Accrual"])
-      payCodeAccrualTable.append(payCodeAccrualArray)
+      payCodeAccrualTable.append(["Pay Code","Balance","Accrual"])
       for i in range(0,len(data)):
-        payCodeAccrualArray = []
         if len(data[i]['balances'])>0:
-          payCodeAccrualTable.append([data[i]['payCode']['qualifier'],data[i]['balances'][0]['dayBalances'][0]['availableBalanceInSeconds'],data[i]['balances'][0]['accrualCode']['qualifier']])
+          payCodeAccrualTable.append([data[i]['payCode']['qualifier'],int(data[i]['balances'][0]['dayBalances'][0]['availableBalanceInSeconds'])/3600,data[i]['balances'][0]['accrualCode']['qualifier']])
       return payCodeAccrualTable
        
        
