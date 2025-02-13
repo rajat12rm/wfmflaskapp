@@ -6,7 +6,7 @@ import logging
 from .globals import init_app
 from .routes.authentication import authentication_bp
 from .routes.chat import chat_bp
-logging.basicConfig(filename = 'systemlog.log',level=logging.INFO)
+logging.basicConfig(filename = 'systemlog.log',level=logging.debug)
 
 # def create_app():
 #     app = Flask(__name__)
