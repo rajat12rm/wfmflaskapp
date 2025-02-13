@@ -1,0 +1,126 @@
+{
+    "messages": [
+     {
+      "content": "Please Enter Request Subtype from the table below",
+      "contentType": "PlainText"
+     }
+    ],
+    "sessionState": {
+     "dialogAction": {
+      "type": "ElicitSlot",
+      "slotToElicit": "requestSubtype"
+     },
+     "intent": {
+      "name": "applyTimeOff",
+      "slots": {
+       "edate": {
+        "value": {
+         "originalValue": "18th feb",
+         "interpretedValue": "2025-02-18",
+         "resolvedValues": [
+          "2025-02-18"
+         ]
+        }
+       },
+       "payCode": null,
+       "requestSubtype": null,
+       "sdate": {
+        "value": {
+         "originalValue": "13th feb",
+         "interpretedValue": "2025-02-13",
+         "resolvedValues": [
+          "2025-02-13"
+         ]
+        }
+       }
+      },
+      "state": "InProgress",
+      "confirmationState": "None"
+     },
+     "sessionAttributes": {},
+     "originatingRequestId": "2e14d817-ed56-489b-a719-8661289c7a5d"
+    },
+    "interpretations": [
+     {
+      "nluConfidence": {
+       "score": 1
+      },
+      "intent": {
+       "name": "applyTimeOff",
+       "slots": {
+        "edate": {
+         "value": {
+          "originalValue": "18th feb",
+          "interpretedValue": "2025-02-18",
+          "resolvedValues": [
+           "2025-02-18"
+          ]
+         }
+        },
+        "payCode": null,
+        "requestSubtype": null,
+        "sdate": {
+         "value": {
+          "originalValue": "13th feb",
+          "interpretedValue": "2025-02-13",
+          "resolvedValues": [
+           "2025-02-13"
+          ]
+         }
+        }
+       },
+       "state": "InProgress",
+       "confirmationState": "None"
+      },
+      "interpretationSource": "Lex"
+     },
+     {
+      "intent": {
+       "name": "FallbackIntent",
+       "slots": {}
+      },
+      "interpretationSource": "Lex"
+     },
+     {
+      "nluConfidence": {
+       "score": 0.54
+      },
+      "intent": {
+       "name": "getSchedule",
+       "slots": {
+        "date": {
+         "value": {
+          "originalValue": "18th",
+          "interpretedValue": "2025-02-18",
+          "resolvedValues": [
+           "2025-02-18"
+          ]
+         }
+        }
+       }
+      },
+      "interpretationSource": "Lex"
+     },
+     {
+      "nluConfidence": {
+       "score": 0.34
+      },
+      "intent": {
+       "name": "PunchIn",
+       "slots": {}
+      },
+      "interpretationSource": "Lex"
+     },
+     {
+      "nluConfidence": {
+       "score": 0.28
+      },
+      "intent": {
+       "name": "PunchOut",
+       "slots": {}
+      },
+      "interpretationSource": "Lex"
+     }
+    ],
+    "sessionId": "70367192619277"
+   }

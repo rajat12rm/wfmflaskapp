@@ -1,4 +1,5 @@
 import json
+import urllib.parse
 from datetime import datetime,timedelta
 from ..services.wfmPunchCreateRequest import punch_create_payload
 from ..services.wfmScheduleRetrieveRequest import schedule_retrieve_payload
@@ -56,6 +57,77 @@ def convoHistory(conn,headers,userMessage,userObject,aws_client,awsSessionId):
               "message":"No Schedules Found"
               }
             return response
+    elif (str(output["sessionState"]["intent"]["name"]) == "applyTimeOff" and str(output["sessionState"]["dialogAction"]["type"]) == "ElicitSlot" and str(output["sessionState"]["dialogAction"]["slotToElicit"]) == "requestSubtype"):
+        print(output)
+        message = ''
+        for i in range (len(output['messages'])):
+            message += " "+output['messages'][i]['content']
+        print(message)
+
+        subtype = getRequestSubtype(conn,headers,userObject.wfmRequestSubtypeApiUrlEndPoint)
+        if subtype:
+          if len(subtype)>0:
+            response = {
+              "category" : "table",
+              "message" : message,
+              "data": subtype,
+              "select": 0
+              }
+            return response
+          else:
+            message = "No Subtypes Found in WFM for you, Please Contact Admin or Manager"
+            response = {
+              "category" : "text",
+              "message" : message
+              }
+            return response
+        else:
+          message = "Could Not Retrieve Your Time Off Request Subtypes from WFM, try again later!"
+          response = {
+           "category" : "Text",
+           "message" : message 
+           }
+          return response
+        
+    elif (str(output["sessionState"]["intent"]["name"]) == "applyTimeOff" and str(output["sessionState"]["dialogAction"]["type"]) == "ElicitSlot" and str(output["sessionState"]["dialogAction"]["slotToElicit"]) == "payCode"):
+        print(output)
+        message = ''
+        for i in range (len(output['messages'])):
+            message += " "+output['messages'][i]['content']
+        print(message)
+
+        subtype = str(output["sessionState"]["intent"]["slots"]["requestSubtype"]["value"]["originalValue"])
+        payCodeAccrualbalances = getPayCodeAndAccrualBalanceFromRequestSubtype(conn,
+                                                      headers,
+                                                      userObject.wfmRequestGetTimeOffAccrualBalanceApiUrlEndPoint,
+                                                      subtype,
+                                                      str(datetime.now()).split(" ")[0]
+                                                      )
+        if payCodeAccrualbalances:
+          if len(payCodeAccrualbalances)>0:
+            response = {
+              "category" : "table",
+              "message" : message,
+              "data": payCodeAccrualbalances,
+              "select": 0
+              }
+            return response
+          
+          else:
+            message = "No Pay Codes Found in WFM for you, Please Contact Admin or Manager"
+            response = {
+              "category" : "text",
+              "message" : message
+              }
+            return response
+        else:
+          message = "Could Not Retrieve Your Accrual Balances from WFM, try again later!"
+          response = {
+           "category" : "Text",
+           "message" : message 
+           }
+          return response
+
     else:
         message = ''
         for i in range (len(output['messages'])):
@@ -210,10 +282,61 @@ def convert_time(time_str):
     formatted_time = formatted_time.lstrip('0').lower()
     return formatted_time
 
-def getschedules(scheduleExtractArray):
-  if len(scheduleExtractArray[0]) == 0:
+def getRequestSubtype(conn,headers,url):
+  payload = ''
+  conn.request("GET", url, payload, headers)
+  res = conn.getresponse()
+  if int(res.status) == 400:
     return False
   else:
-    for i in range(len(scheduleExtractArray[0])):
-      message ="For schedule on " + scheduleExtractArray[0][i]+"schedule begins at "+scheduleExtractArray[1][i]+"and ends on "+scheduleExtractArray[2][i]+"at "+scheduleExtractArray[3][i]+"with Job of "+scheduleExtractArray[4][i]
-      return message
+    data = res.read()
+    data=data.decode("utf-8")
+    data = json.loads(data)
+    print(data)
+    #print(data)
+    subTypeArray = []
+    if len(data)>0:
+        for i in range(0,len(data)):
+            print(data[i]['name'],"\n")
+            subTypeArray.append(data[i]['name'])
+        print(i+1," Request Subtypes Found")
+        return subTypeArray
+    else:
+        print("No Subtypes Found")
+        return subTypeArray
+
+def getPayCodeAndAccrualBalanceFromRequestSubtype(conn,headers,url,subtype,currentdate):
+  payload = ''
+  #subtype = 'Time Off'
+  encoded_subtype = urllib.parse.quote(subtype)  # Encode the 'Time Off' parameter
+  conn.request("GET",
+               f'{url}?subtype_name={encoded_subtype}&date={currentdate}',
+               payload,
+               headers)
+  res = conn.getresponse()
+  if int(res.status) ==400:
+    return False
+  else:
+    data = res.read()
+    data = data.decode("utf-8")
+    print(data)
+    data = json.loads(data)
+    payCodeAccrualTable = []
+    if len(data)>0:
+      payCodeAccrualArray = []
+      # set table headers
+      payCodeAccrualArray.append("Pay Code","Balance","Accrual")
+      payCodeAccrualTable.append(payCodeAccrualArray)
+      for i in range(0,len(data)):
+        payCodeAccrualArray = []
+        if len(data[i]['balances'])>0:
+          payCodeAccrualTable.append(data[i]['payCode']['qualifier'],data[i]['balances'][0]['dayBalances'][0]['availableBalanceInSeconds'],data[i]['balances'][0]['accrualCode']['qualifier'])
+
+      
+      return payCodeAccrualTable
+       
+       
+       
+
+   
+   

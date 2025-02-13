@@ -20,6 +20,9 @@ class Config:
     wfmClientSecretKey=os.getenv('WFM_CLIENT_SECRET_KEY')
     wfmPasswordGrantType =os.getenv('WFM_ACCESS_GRANT_TYPE')
     wfmAccessTokenApiUrlEndPoint =os.getenv('WFM_ACCESS_TOKEN_REQUEST_URL')
+    wfmRequestSubtypeApiUrlEndPoint = os.getenv('WFM_REQUEST_SUBTYPES_URL')
+    wfmRequestGetTimeOffAccrualBalanceApiUrlEndPoint = os.getenv('WFM_REQUEST_TIMEOFF_ACCRUAL_BALANCE')
+    
     def __init__(self, name):
         self.name = name
 
