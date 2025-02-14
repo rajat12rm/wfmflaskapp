@@ -66,14 +66,17 @@ def convoHistory(conn,headers,userMessage,userObject,aws_client,awsSessionId):
         print(message)
 
         subtype = getRequestSubtype(conn,headers,userObject.wfmRequestSubtypeApiUrlEndPoint)
+        print("Retrived subtype from function")
+        print(type(subtype))
         if subtype:
           if len(subtype)>0:
             response = {
               "category" : "table",
               "message" : message,
-              "data": subtype,
+              "data": str(subtype),
               "select": 0
               }
+            print(response)
             return response
           else:
             message = "No Subtypes Found in WFM for you, Please Contact Admin or Manager"
@@ -105,12 +108,11 @@ def convoHistory(conn,headers,userMessage,userObject,aws_client,awsSessionId):
                                                       str(datetime.now()).split(" ")[0]
                                                       )
         if payCodeAccrualbalances:
-          print(payCodeAccrualbalances)
           if len(payCodeAccrualbalances)>0:
             response = {
               "category" : "table",
               "message" : message,
-              "data": payCodeAccrualbalances,
+              "data": str(payCodeAccrualbalances),
               "select": 0
               }
             return response
@@ -363,7 +365,10 @@ def getPayCodeAndAccrualBalanceFromRequestSubtype(conn,headers,url,subtype,curre
       payCodeAccrualTable.append(["Pay Code","Balance","Accrual"])
       for i in range(0,len(data)):
         if len(data[i]['balances'])>0:
-          payCodeAccrualTable.append([data[i]['payCode']['qualifier'],int(data[i]['balances'][0]['dayBalances'][0]['availableBalanceInSeconds'])/3600,data[i]['balances'][0]['accrualCode']['qualifier']])
+          payCodeAccrualTable.append([data[i]['payCode']['qualifier'],
+                                      (int(data[i]['balances'][0]['dayBalances'][0]['availableBalanceInSeconds'])/3600),
+                                      data[i]['balances'][0]['accrualCode']['qualifier']])
+      print(payCodeAccrualTable)
       return payCodeAccrualTable
        
        
