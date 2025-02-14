@@ -68,7 +68,7 @@ def authentication():
                 return jsonify(message),200
             else:
                 message = "Check Credentials or User Authorization and Try Again"
-                current_app.logger.error(f"Authentication failure for {str(data['username'])} at - {loginTime}")
+                current_app.logger.error(f"Authentication failure for {str(data['username'])}")
                 return jsonify(str(message)),401
 
     except Exception as e:
