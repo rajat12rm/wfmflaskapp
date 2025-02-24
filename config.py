@@ -25,6 +25,7 @@ class Config:
     wfmCreateTimeOffApiUrlEndPoint = os.getenv('WFM_CREATE_TIMEOFF_REQUEST_URL')
     wfmRequestTimeOffApiUrlEndPoint = os.getenv('WFM_TIMEOFF_REQUEST_URL')
     wfmUpdateTimeOffApiUrlEndPoint =os.getenv('WFM_TIMEOFF_UPDATE_URL')
+    wfmExecuteHyperfindApiUrlEndPoint = os.getenv('WFM_EXECUTE_HYPERFIND_URL')
 
     def __init__(self, name):
         self.name = name

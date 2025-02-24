@@ -6,7 +6,7 @@ from ..services.wfmScheduleRetrieveRequest import schedule_retrieve_payload
 from ..services.wfmTimeOffCreateRequest import createTimeOffRequestPayload
 from ..services.wfmRetrieveTimeOff import retrieveTimeOffPayload
 from ..services.wfmUpdateTimeOffStatusRequest import UpdateTimeOffStatusPayload
-
+from ..services.wfmRunAllHomeHyperfindRequest import  allhomeHyperfindPayload
 def convoHistory(conn,headers,userMessage,userObject,aws_client,awsSessionId):
     output = lex_convo(aws_client,userObject.botId,userObject.botAliasId,userObject.localeId,awsSessionId, userMessage)
     if ((str(output["sessionState"]["intent"]["name"]) == "PunchIn" and str(output["sessionState"]["intent"]["state"])) == "Fulfilled") or ((str(output["sessionState"]["intent"]["name"]) == "PunchOut" and str(output["sessionState"]["intent"]["state"])) == "Fulfilled"):
@@ -284,7 +284,32 @@ def convoHistory(conn,headers,userMessage,userObject,aws_client,awsSessionId):
 
             return response
 
-           
+    elif (str(output["sessionState"]["intent"]["name"]) == "reportingEmployees" and str(output["sessionState"]["intent"]["state"])) == "Fulfilled":
+      print(output)
+      message = ''
+      for i in range (len(output['messages'])):
+        message += " "+output['messages'][i]['content']
+      print(message)
+      reportingEmployees = executeAllHomeHyperfind(conn,
+                                                   userObject.wfmExecuteHyperfindApiUrlEndPoint,
+                                                   headers)
+      if reportingEmployees:
+        response = {
+              "category" : "table",
+              "message" : message,
+              "data": str(reportingEmployees)
+          }
+        return response
+      else:
+          message = "Could Not Fetch Employee List, check settings or Try Again Later!"
+          response = {
+            "category" : "Text",
+            "message" : message 
+            }
+         
+         
+
+
     else:
         #Let the normal conversion flow from Lex Happen
         message = ''
@@ -566,9 +591,30 @@ def fetchActionsOnTimeOffRequests():
   actionArray = [['Update Status To - '],['Cancel'],['Approve'],['Ignore']]
   return actionArray
 
+def executeAllHomeHyperfind(conn,url,headers):
+  conn.request("POST",url, allhomeHyperfindPayload(), headers)
+  res = conn.getresponse()
+  if int(res.status) == 400:
+    print("Error in WFM")
+    return False
+  if int(res.status) == 200:
+    print("Success")
+    data = res.read()
+    data = data.decode("utf-8")
+    print(data)
+    data = json.loads(data)
+    print(data)
+    if len(data)>0:
+      reportingEmployees = []
+      reportingEmployees.append(['Person Number','Employee Name'])
+      personArray = (data['result']['basePersons'])
+      print(personArray)
+      for i in range(0,len(personArray)):
+          reportingEmployees.append([personArray[i]['personNumber'],(personArray[i]['fullName'])])
 
+      return reportingEmployees
 
-    
-               
+   
+   
 
 
