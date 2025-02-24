@@ -4,28 +4,32 @@ from datetime import datetime,timedelta
 from ..services.wfmPunchCreateRequest import punch_create_payload
 from ..services.wfmScheduleRetrieveRequest import schedule_retrieve_payload
 from ..services.wfmTimeOffCreateRequest import createTimeOffRequestPayload
+from ..services.wfmRetrieveTimeOff import retrieveTimeOffPayload
+from ..services.wfmUpdateTimeOffStatusRequest import UpdateTimeOffStatusPayload
 
 def convoHistory(conn,headers,userMessage,userObject,aws_client,awsSessionId):
     output = lex_convo(aws_client,userObject.botId,userObject.botAliasId,userObject.localeId,awsSessionId, userMessage)
-    if (str(output["sessionState"]["intent"]["name"]) == "PunchIn" and str(output["sessionState"]["intent"]["state"])) == "Fulfilled":
-        
+    if ((str(output["sessionState"]["intent"]["name"]) == "PunchIn" and str(output["sessionState"]["intent"]["state"])) == "Fulfilled") or ((str(output["sessionState"]["intent"]["name"]) == "PunchOut" and str(output["sessionState"]["intent"]["state"])) == "Fulfilled"):
+        id =2
         message = ''
         for i in range (len(output['messages'])):
             message += " "+output['messages'][i]['content']
         print(message)
+        if output["sessionState"]["intent"]["name"] == "PunchOut":
+          id =4 
 
-        if (punch_import_request(conn,headers,userObject.punch_import_api_url_endpoint,userObject.name,str(datetime.now()).replace(" ","T"))):
+        if (punch_import_request(conn,headers,userObject.punch_import_api_url_endpoint,userObject.name,str(datetime.now()).replace(" ","T"),id)):
             response = {
               "category":"text",
               "data":"",
-              "message":"Punched In SuccessFully"
+              "message":"Punched SuccessFully"
                 }
             return response
         else:
             response = {
               "category":"text",
               "data":"",
-              "message":"Not Able To Punch In WFM, Please check Settings"
+              "message":"Not Able To Punch In WFM, Please check Settings or Try Again Later"
                 }
             return response
            
@@ -163,7 +167,124 @@ def convoHistory(conn,headers,userMessage,userObject,aws_client,awsSessionId):
           "message" : message 
         }
         return response
-         
+    
+    elif (str(output["sessionState"]["intent"]["name"]) == "getTimeOffRequests" and str(output["sessionState"]["dialogAction"]["type"]) == "ElicitSlot" and str(output["sessionState"]["dialogAction"]["slotToElicit"]) == "id"):
+        print(output)
+        message = ''
+        for i in range (len(output['messages'])):
+            message += " "+output['messages'][i]['content']
+        print(message)
+
+        requestsArray = getPendingTimeOffRequests(conn,
+                                                  userObject.wfmRequestTimeOffApiUrlEndPoint,
+                                                  headers)
+        if requestsArray:
+          response = {
+              "category" : "table",
+              "message" : message,
+              "data": str(requestsArray),
+              "select": 0
+          }
+          return response
+        else:
+          message = "Could Not Retrieve Any Pending Time Off Requests !"
+          response = {
+           "category" : "Text",
+           "message" : message 
+           }
+          return response
+    elif (str(output["sessionState"]["intent"]["name"]) == "getTimeOffRequests" and str(output["sessionState"]["dialogAction"]["type"]) == "ElicitSlot" and str(output["sessionState"]["dialogAction"]["slotToElicit"]) == "action"):
+        message = ''
+        for i in range (len(output['messages'])):
+            message += " "+output['messages'][i]['content']
+        print(message)
+        response = {
+              "category" : "table",
+              "message" : message,
+              "data": str(fetchActionsOnTimeOffRequests()),
+              "select": 0
+          }
+        return response
+    elif (str(output["sessionState"]["intent"]["name"]) == "getTimeOffRequests" and str(output["sessionState"]["intent"]["state"])) == "Fulfilled":
+        print(output)
+        message = ''
+        for i in range (len(output['messages'])):
+            message += " "+output['messages'][i]['content']
+        print(message)
+        requestId = output["sessionState"]["intent"]["slots"]["id"]["value"]["originalValue"]
+        actionType = output["sessionState"]["intent"]["slots"]["action"]["value"]["originalValue"]
+        print(requestId)
+        print(actionType)
+        if actionType == 'Cancel':
+          #8 is for cancel request
+          action = applyActionsOnTimeOffRequests(conn,
+                                                 userObject.wfmUpdateTimeOffApiUrlEndPoint,
+                                                 headers,
+                                                 requestId,
+                                                 8)
+          if action:
+            message = "The Request Is Cancelled SuccessFully !"
+            response = {
+            "category" : "Text",
+            "message" : message 
+            }
+            return response
+          else:
+            message = "The Request Cannot be Updated !"
+            response = {
+            "category" : "Text",
+            "message" : message 
+            }
+
+            return response
+
+        if actionType == 'Approve':
+          #4 is for approve request
+          action = applyActionsOnTimeOffRequests(conn,
+                                                 userObject.wfmUpdateTimeOffApiUrlEndPoint,
+                                                 headers,
+                                                 requestId,
+                                                 4)
+          if action:
+            message = "The Request Is Approved SuccessFully !"
+            response = {
+            "category" : "Text",
+            "message" : message 
+            }
+            return response
+          else:
+            message = "The Request Cannot be Updated !"
+            response = {
+            "category" : "Text",
+            "message" : message 
+            }
+
+            return response
+
+        if actionType == 'Ignore':
+          #5 is for ignore request
+          action = applyActionsOnTimeOffRequests(conn,
+                                                 userObject.wfmUpdateTimeOffApiUrlEndPoint,
+                                                 headers,
+                                                 requestId,
+                                                 5)
+          if action:
+            message = "The Request Is Ignored SuccessFully !"
+            response = {
+            "category" : "Text",
+            "message" : message 
+            }
+            return response
+          else:
+            message = "The Request Cannot be Updated !"
+            response = {
+            "category" : "Text",
+            "message" : message 
+            }
+
+            return response
+
+           
     else:
         #Let the normal conversion flow from Lex Happen
         message = ''
@@ -239,14 +360,16 @@ def punch_import_request(
     headers,
     url,
     employee_id,
-    date_time
+    date_time,
+    id
     ):
   
   conn.request("POST", 
                url,
                punch_create_payload(
                 employee_id,
-                date_time
+                date_time,
+                id
                 ), 
                headers)
   res = conn.getresponse()
@@ -395,7 +518,57 @@ def applyTimeOff(conn,headers,url,requestSubType,payCode,startDate,endDate):
     return True
 
    
-   
-   
-   
-   
+def getPendingTimeOffRequests(conn,url,headers):
+  conn.request("POST",url, retrieveTimeOffPayload(), headers)
+  res = conn.getresponse()
+  if res.status == 400:
+    print("Error in WFM")
+    return False
+  if res.status == 200:
+    data = res.read()
+    data = data.decode("utf-8")
+    print(data)
+    data = json.loads(data)
+    timeOffRequestArray = []
+    if len(data)>0:
+      timeOffRequestArray.append(["(Action)Request-ID","Employee User-Name", "Date Of Creation","Start-Date","End-Date", "Pay Code", "Status"])
+      for i in range(0,len(data)):
+        print(data[i],"\n")
+        timeOffRequestArray.append(
+              [
+              data[i]['id'],
+              data[i]['creator']['qualifier'],
+              data[i]['createDateTime'].split('T')[0],
+              data[i]['periods'][0]['startDate'],
+              data[i]['periods'][0]['endDate'],
+              data[i]['periods'][0]['payCode']['qualifier'],
+              data[i]['currentStatus']['name']
+              ]
+        )
+      return timeOffRequestArray
+    else:
+      return False
+    
+def applyActionsOnTimeOffRequests(conn,url,headers,TimeOffRequestId,actionId):
+  conn.request("POST",url, UpdateTimeOffStatusPayload(actionId,TimeOffRequestId), headers)
+  res = conn.getresponse()
+  if int(res.status) == 400:
+    print("Error in WFM")
+    return False
+  if int(res.status) == 200:
+    print("Success")
+    data = res.read()
+    data = data.decode("utf-8")
+    print(data)
+    return True
+
+def fetchActionsOnTimeOffRequests():
+  actionArray = [['Update Status To - '],['Cancel'],['Approve'],['Ignore']]
+  return actionArray
+
+
+
+    
+               
+
+

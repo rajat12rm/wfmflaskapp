@@ -23,6 +23,9 @@ class Config:
     wfmRequestSubtypeApiUrlEndPoint = os.getenv('WFM_REQUEST_SUBTYPES_URL')
     wfmRequestGetTimeOffAccrualBalanceApiUrlEndPoint = os.getenv('WFM_REQUEST_TIMEOFF_ACCRUAL_BALANCE')
     wfmCreateTimeOffApiUrlEndPoint = os.getenv('WFM_CREATE_TIMEOFF_REQUEST_URL')
+    wfmRequestTimeOffApiUrlEndPoint = os.getenv('WFM_TIMEOFF_REQUEST_URL')
+    wfmUpdateTimeOffApiUrlEndPoint =os.getenv('WFM_TIMEOFF_UPDATE_URL')
+
     def __init__(self, name):
         self.name = name
 

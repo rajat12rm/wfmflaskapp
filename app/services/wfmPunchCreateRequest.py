@@ -1,7 +1,8 @@
 import json
 def punch_create_payload(
                           employee_id,
-                          date_time
+                          date_time,
+                          id
                           ):
  
 #construct payload for request
@@ -13,7 +14,7 @@ def punch_create_payload(
           "qualifier": employee_id
         },
         "typeOverride": {
-				"id": 2
+				"id": id
 			  }
       }
     ]
